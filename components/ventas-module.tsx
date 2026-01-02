@@ -545,7 +545,10 @@ export function VentasModule() {
                             </CommandEmpty>
                             <CommandGroup className="max-h-64 overflow-auto">
                               <CommandItem
-                                onSelect={handleSelectAll}
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  handleSelectAll()
+                                }}
                                 className="text-white cursor-pointer hover:bg-white/10 border-b border-white/10"
                               >
                                 <div className="flex items-center gap-2 w-full">
@@ -557,7 +560,10 @@ export function VentasModule() {
                                 </div>
                               </CommandItem>
                               <CommandItem
-                                onSelect={handleClearProducts}
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  handleClearProducts()
+                                }}
                                 className="text-white cursor-pointer hover:bg-white/10 border-b border-white/10"
                               >
                                 <div className="flex items-center gap-2 w-full">
@@ -573,7 +579,10 @@ export function VentasModule() {
                               {uniqueInvoiceProducts.map((producto) => (
                                 <CommandItem
                                   key={producto}
-                                  onSelect={() => handleProductToggle(producto)}
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    handleProductToggle(producto)
+                                  }}
                                   className="text-white cursor-pointer hover:bg-white/10"
                                 >
                                   <div className="flex items-center gap-2 w-full">

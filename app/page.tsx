@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { LoginPage } from "@/components/login-page"
 import { Card, CardContent } from "@/components/ui/card"
@@ -28,7 +28,16 @@ function DashboardSkeleton() {
 }
 
 function AuthGate() {
+  const [isMounted, setIsMounted] = useState(false)
   const { currentUser, isLoading } = useAuth()
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  if (!isMounted) {
+    return <DashboardSkeleton />
+  }
 
   if (isLoading) {
     return <DashboardSkeleton />
