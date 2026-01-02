@@ -211,9 +211,13 @@ export function VentasModule() {
   const handleProductToggle = (producto: string) => {
     console.log("[v0] Product toggle clicked:", producto)
     setSelectedProducts((prev) => {
-      const newSelection = prev.includes(producto) ? prev.filter((p) => p !== producto) : [...prev, producto]
-      console.log("[v0] Previous selection:", prev)
-      console.log("[v0] New selection:", newSelection)
+      console.log("[v0] Current selection before toggle:", prev)
+      const isCurrentlySelected = prev.includes(producto)
+      console.log("[v0] Is currently selected:", isCurrentlySelected)
+
+      const newSelection = isCurrentlySelected ? prev.filter((p) => p !== producto) : [...prev, producto]
+
+      console.log("[v0] New selection after toggle:", newSelection)
       return newSelection
     })
   }
@@ -545,8 +549,10 @@ export function VentasModule() {
                             </CommandEmpty>
                             <CommandGroup className="max-h-64 overflow-auto">
                               <CommandItem
+                                onSelect={() => {}}
                                 onClick={(e) => {
                                   e.preventDefault()
+                                  e.stopPropagation()
                                   handleSelectAll()
                                 }}
                                 className="text-white cursor-pointer hover:bg-white/10 border-b border-white/10"
@@ -560,8 +566,10 @@ export function VentasModule() {
                                 </div>
                               </CommandItem>
                               <CommandItem
+                                onSelect={() => {}}
                                 onClick={(e) => {
                                   e.preventDefault()
+                                  e.stopPropagation()
                                   handleClearProducts()
                                 }}
                                 className="text-white cursor-pointer hover:bg-white/10 border-b border-white/10"
@@ -579,8 +587,10 @@ export function VentasModule() {
                               {uniqueInvoiceProducts.map((producto) => (
                                 <CommandItem
                                   key={producto}
+                                  onSelect={() => {}}
                                   onClick={(e) => {
                                     e.preventDefault()
+                                    e.stopPropagation()
                                     handleProductToggle(producto)
                                   }}
                                   className="text-white cursor-pointer hover:bg-white/10"
