@@ -28,19 +28,9 @@ const COLORS = [
 ]
 
 export async function DashboardView() {
-  const [
-    decomisosLast7Days,
-    reclamosData,
-    decomisos,
-    reclamos,
-    hojasRuta,
-    novedades,
-    decomisosToday,
-    rutasActivas,
-    activeBranchClaims,
-    vehiculos,
-    documentos,
-  ] = await Promise.all([
+  console.log("[v0] Starting Dashboard Data Fetch...")
+
+  const results = await Promise.allSettled([
     getDecomisosLast7Days(),
     getReclamosByTipo(),
     getDecomisos(),
@@ -53,6 +43,33 @@ export async function DashboardView() {
     getVehiculos(),
     getDocumentosLogistica(),
   ])
+
+  console.log("[v0] Dashboard Fetch Complete. Processing results...")
+
+  // Extract data safely from settled promises
+  const decomisosLast7Days = results[0].status === "fulfilled" ? results[0].value : []
+  const reclamosData = results[1].status === "fulfilled" ? results[1].value : []
+  const decomisos = results[2].status === "fulfilled" ? results[2].value : []
+  const reclamos = results[3].status === "fulfilled" ? results[3].value : []
+  const hojasRuta = results[4].status === "fulfilled" ? results[4].value : []
+  const novedades = results[5].status === "fulfilled" ? results[5].value : []
+  const decomisosToday = results[6].status === "fulfilled" ? results[6].value : 0
+  const rutasActivas = results[7].status === "fulfilled" ? results[7].value : 0
+  const activeBranchClaims = results[8].status === "fulfilled" ? results[8].value : 0
+  const vehiculos = results[9].status === "fulfilled" ? results[9].value : []
+  const documentos = results[10].status === "fulfilled" ? results[10].value : []
+
+  // Log any errors for debugging
+  const errors = results.filter((r) => r.status === "rejected")
+  if (errors.length > 0) {
+    console.error(
+      "[v0] Dashboard Fetch Errors:",
+      errors.map((e, i) => ({ index: i, reason: e.status === "rejected" ? e.reason : null })),
+    )
+  }
+
+  console.log("[v0] Dashboard Data Loaded Successfully")
+  // </CHANGE>
 
   const kpis = {
     total_decomisos: decomisosToday,
@@ -93,7 +110,6 @@ export async function DashboardView() {
           </div>
         </div>
       </div>
-      {/* </CHANGE> */}
 
       <div className="container mx-auto px-6 py-6 space-y-6">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -141,7 +157,6 @@ export async function DashboardView() {
             <p className="text-[10px] text-zinc-600 mt-1 font-mono uppercase tracking-wider">Eventos registrados</p>
           </div>
         </div>
-        {/* </CHANGE> */}
 
         <DashboardExpirationAlerts vehiculos={vehiculos || []} documentos={documentos || []} />
 
@@ -152,21 +167,27 @@ export async function DashboardView() {
               <CardTitle>Decomisos Últimos 7 Días</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={decomisosChartData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="fecha" className="text-xs" tick={{ fill: "hsl(var(--muted-foreground))" }} />
-                  <YAxis className="text-xs" tick={{ fill: "hsl(var(--muted-foreground))" }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "6px",
-                    }}
-                  />
-                  <Bar dataKey="cantidad" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              {decomisosChartData && decomisosChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={decomisosChartData}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="fecha" className="text-xs" tick={{ fill: "hsl(var(--muted-foreground))" }} />
+                    <YAxis className="text-xs" tick={{ fill: "hsl(var(--muted-foreground))" }} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "6px",
+                      }}
+                    />
+                    <Bar dataKey="cantidad" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[300px] text-sm text-muted-foreground">
+                  No hay datos disponibles
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -175,32 +196,38 @@ export async function DashboardView() {
               <CardTitle>Reclamos por Tipo</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={reclamosData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ tipo, cantidad }) => `${tipo} (${cantidad})`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="cantidad"
-                    nameKey="tipo"
-                  >
-                    {reclamosData?.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "6px",
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+              {reclamosData && reclamosData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={reclamosData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ tipo, cantidad }) => `${tipo} (${cantidad})`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="cantidad"
+                      nameKey="tipo"
+                    >
+                      {reclamosData?.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "6px",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[300px] text-sm text-muted-foreground">
+                  No hay datos disponibles
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -431,7 +458,7 @@ export async function DashboardView() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {novedades?.map((novedad) => (
+                  {novedades?.slice(0, 10).map((novedad) => (
                     <div key={novedad.id} className="border-l-2 border-primary pl-4 py-2">
                       <div className="flex items-start justify-between gap-4">
                         <div className="space-y-1 flex-1">
