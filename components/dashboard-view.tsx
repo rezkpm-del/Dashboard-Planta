@@ -1,3 +1,6 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -18,6 +21,7 @@ import {
 import { AlertTriangle, FileText, Truck, Bell, Calendar, MapPin } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
 import { DashboardExpirationAlerts } from "@/components/dashboard-expiration-alerts"
+import { Skeleton } from "@/components/ui/skeleton"
 
 const COLORS = [
   "hsl(var(--chart-1))",
@@ -27,49 +31,115 @@ const COLORS = [
   "hsl(var(--chart-5))",
 ]
 
-export async function DashboardView() {
-  console.log("[v0] Starting Dashboard Data Fetch...")
+export function DashboardView() {
+  const [isLoading, setIsLoading] = useState(true)
+  const [dashboardData, setDashboardData] = useState<any>({
+    decomisosLast7Days: [],
+    reclamosData: [],
+    decomisos: [],
+    reclamos: [],
+    hojasRuta: [],
+    novedades: [],
+    decomisosToday: 0,
+    rutasActivas: 0,
+    activeBranchClaims: 0,
+    vehiculos: [],
+    documentos: [],
+  })
 
-  const results = await Promise.allSettled([
-    getDecomisosLast7Days(),
-    getReclamosByTipo(),
-    getDecomisos(),
-    getReclamos(),
-    getHojasRuta(),
-    getNovedades(),
-    getDecomisosToday(),
-    getRutasActivas(),
-    getActiveBranchClaimsCount(),
-    getVehiculos(),
-    getDocumentosLogistica(),
-  ])
+  useEffect(() => {
+    let isMounted = true
 
-  console.log("[v0] Dashboard Fetch Complete. Processing results...")
+    const loadDashboardData = async () => {
+      console.log("[v0] Fetching Dashboard Data (ONCE)...")
 
-  // Extract data safely from settled promises
-  const decomisosLast7Days = results[0].status === "fulfilled" ? results[0].value : []
-  const reclamosData = results[1].status === "fulfilled" ? results[1].value : []
-  const decomisos = results[2].status === "fulfilled" ? results[2].value : []
-  const reclamos = results[3].status === "fulfilled" ? results[3].value : []
-  const hojasRuta = results[4].status === "fulfilled" ? results[4].value : []
-  const novedades = results[5].status === "fulfilled" ? results[5].value : []
-  const decomisosToday = results[6].status === "fulfilled" ? results[6].value : 0
-  const rutasActivas = results[7].status === "fulfilled" ? results[7].value : 0
-  const activeBranchClaims = results[8].status === "fulfilled" ? results[8].value : 0
-  const vehiculos = results[9].status === "fulfilled" ? results[9].value : []
-  const documentos = results[10].status === "fulfilled" ? results[10].value : []
+      try {
+        const results = await Promise.allSettled([
+          getDecomisosLast7Days(),
+          getReclamosByTipo(),
+          getDecomisos(),
+          getReclamos(),
+          getHojasRuta(),
+          getNovedades(),
+          getDecomisosToday(),
+          getRutasActivas(),
+          getActiveBranchClaimsCount(),
+          getVehiculos(),
+          getDocumentosLogistica(),
+        ])
 
-  // Log any errors for debugging
-  const errors = results.filter((r) => r.status === "rejected")
-  if (errors.length > 0) {
-    console.error(
-      "[v0] Dashboard Fetch Errors:",
-      errors.map((e, i) => ({ index: i, reason: e.status === "rejected" ? e.reason : null })),
+        if (isMounted) {
+          const data = {
+            decomisosLast7Days: results[0].status === "fulfilled" ? results[0].value : [],
+            reclamosData: results[1].status === "fulfilled" ? results[1].value : [],
+            decomisos: results[2].status === "fulfilled" ? results[2].value : [],
+            reclamos: results[3].status === "fulfilled" ? results[3].value : [],
+            hojasRuta: results[4].status === "fulfilled" ? results[4].value : [],
+            novedades: results[5].status === "fulfilled" ? results[5].value : [],
+            decomisosToday: results[6].status === "fulfilled" ? results[6].value : 0,
+            rutasActivas: results[7].status === "fulfilled" ? results[7].value : 0,
+            activeBranchClaims: results[8].status === "fulfilled" ? results[8].value : 0,
+            vehiculos: results[9].status === "fulfilled" ? results[9].value : [],
+            documentos: results[10].status === "fulfilled" ? results[10].value : [],
+          }
+
+          setDashboardData(data)
+          setIsLoading(false)
+          console.log("[v0] Dashboard Data Loaded Successfully")
+        }
+      } catch (error) {
+        console.error("[v0] Dashboard Fetch Error:", error)
+        if (isMounted) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    loadDashboardData()
+
+    return () => {
+      isMounted = false
+    }
+  }, []) // Empty dependency array ensures this runs only once
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen p-6 space-y-6">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <Skeleton className="h-24 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          {[...Array(2)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <Skeleton className="h-[300px] w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
     )
   }
 
-  console.log("[v0] Dashboard Data Loaded Successfully")
-  // </CHANGE>
+  const {
+    decomisosLast7Days,
+    reclamosData,
+    decomisos,
+    reclamos,
+    hojasRuta,
+    novedades,
+    decomisosToday,
+    rutasActivas,
+    activeBranchClaims,
+    vehiculos,
+    documentos,
+  } = dashboardData
 
   const kpis = {
     total_decomisos: decomisosToday,
@@ -79,7 +149,7 @@ export async function DashboardView() {
   }
 
   const decomisosChartData = decomisosLast7Days?.reduce(
-    (acc, decomiso) => {
+    (acc: any[], decomiso: any) => {
       const fecha = new Date(decomiso.fecha).toLocaleDateString("es-AR", { month: "short", day: "numeric" })
       const existing = acc.find((item) => item.fecha === fecha)
       if (existing) {
@@ -92,7 +162,7 @@ export async function DashboardView() {
     [] as { fecha: string; cantidad: number }[],
   )
 
-  const rutasActivasList = hojasRuta?.filter((r) => r.estado === "En Ruta") || []
+  const rutasActivasList = hojasRuta?.filter((r: any) => r.estado === "En Ruta") || []
 
   return (
     <div className="min-h-screen">
@@ -256,7 +326,7 @@ export async function DashboardView() {
                 </div>
               ))}
               {rutasActivasList.length === 0 && (
-                <p className="text-center text-zinc-600 py-4 text-xs font-mono uppercase tracking-wider">
+                <p className="text-center text-zinc-600 py-4 text-xs font-mono uppercase tracking-widest">
                   No hay rutas activas
                 </p>
               )}
